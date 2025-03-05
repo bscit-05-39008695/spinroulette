@@ -1,12 +1,30 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // Import for navigation
-// You'll need to create these components separately
-import Modal from './Modal';
+import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react"; // Added for Modal close icon
 import TransactionForm from "./TransactionForm";
 import GameHistory from "./GameHistory";
 
+// Integrated Modal Component
+const Modal = ({ isOpen, onClose, children }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-96 relative">
+        <button 
+          onClick={onClose}
+          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+        >
+          <X size={24} />
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+};
+
 const HomePage = () => {
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
   // State management
   const [balance, setBalance] = useState(() => {
     const savedBalance = localStorage.getItem('roulette_balance');
@@ -27,7 +45,7 @@ const HomePage = () => {
     const savedUsername = localStorage.getItem('username');
     return savedUsername || "username";
   });
-  const [currentGame, setCurrentGame] = useState(null); // Fixed: Properly define the state
+  const [currentGame, setCurrentGame] = useState(null);
   const [profileImage, setProfileImage] = useState(() => {
     return localStorage.getItem('profileImage') || null;
   });
@@ -52,17 +70,7 @@ const HomePage = () => {
   };
 
   const handleSignOut = () => {
-    
-    // You can add any sign out logic here
     navigate('/login');
-    // Optionally reset user data
-    
-    // setUsername("Guest");
-    // setBalance(0);
-    // setProfileImage(null);
-    // localStorage.removeItem('username');
-    // localStorage.removeItem('profileImage');
-    // localStorage.removeItem('roulette_balance');
   };
 
   // Handler functions
@@ -142,10 +150,9 @@ const HomePage = () => {
   };
 
   const handlePlayGame = (game) => {
-    setCurrentGame(game); // Now this will work correctly
+    setCurrentGame(game);
     
     if (game === 'russian-roulette') {
-      // Navigate to the Russian Roulette gameplay page
       navigate('/russian-roulette-game', { 
         state: { 
           username, 
@@ -154,7 +161,6 @@ const HomePage = () => {
         } 
       });
     } else if (game === 'spin-and-win') {
-      // Navigate to the Spin and Win gameplay page
       navigate('/spin-and-win-game', { 
         state: { 
           username, 
