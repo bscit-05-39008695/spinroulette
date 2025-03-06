@@ -121,103 +121,61 @@ const RouletteGameplay = () => {
   const pullTrigger = () => {
     // Only allow pull trigger if not spinning
     if (isSpinning) return;
-    
+  
     // Random chance (1 in 6) of firing
     const chamberFired = Math.floor(Math.random() * 6) === 0;
-    
+  
     if (chamberFired) {
       // Game over - outcome depends on who pulled the trigger
       setGameOver(true);
-      
-      if (currentTurn === "player") {
-        // Player's turn and gun fired - player wins (shot the opponent)
-        setGameResult("win");
-        
-        // Add the entire pot to player's balance
-        const newBalance = balance + potAmount;
-        setBalance(newBalance);
-        
-        // Add to history
-        const newBetRecord = {
-          timestamp: new Date().toLocaleString(),
-          mode: "Russian Roulette",
-          players: `${username} vs ${selectedOpponent?.username}`,
-          betAmount: betAmount,
-          winAmount: potAmount,
-          outcome: "won",
-          balanceAfter: newBalance
-        };
-        
-        setBetHistory(prevHistory => [...prevHistory, newBetRecord]);
-      } else {
-        // Opponent's turn and gun fired - player loses (got shot)
-        setGameResult("lose");
-        
-        // Balance was already deducted when bet was placed
-        const newBalance = balance;
-        
-        // Add to history
-        const newBetRecord = {
-          timestamp: new Date().toLocaleString(),
-          mode: "Russian Roulette",
-          players: `${username} vs ${selectedOpponent?.username}`,
-          betAmount: betAmount,
-          outcome: "lost",
-          balanceAfter: newBalance
-        };
-        
-        setBetHistory(prevHistory => [...prevHistory, newBetRecord]);
-      }
+  
+      const outcome = currentTurn === "player" ? "win" : "lose";
+      const winAmount = outcome === "win" ? potAmount : 0;
+  
+      // Update balance and add to history
+      const newBalance = balance + (outcome === "win" ? potAmount : 0);
+      const newBetRecord = {
+        timestamp: new Date().toLocaleString(),
+        mode: "Russian Roulette",
+        players: `${username} vs ${selectedOpponent?.username}`,
+        betAmount: betAmount,
+        winAmount,
+        outcome,
+        balanceAfter: newBalance
+      };
+  
+      setBalance(newBalance);
+      setBetHistory(prevHistory => [...prevHistory, newBetRecord]);
+      setGameResult(outcome);
     } else {
       // Move to next chamber
       setChamber(prev => prev + 1);
-      
+  
       // Change turn
       setCurrentTurn(prevTurn => prevTurn === "player" ? "opponent" : "player");
-      
+  
       // If it was the last chamber, the last player automatically wins
       if (chamber === 5) {
         setGameOver(true);
-        
-        if (currentTurn === "player") {
-          // It was player's turn for the last chamber, player wins
-          setGameResult("win");
-          
-          // Add the entire pot to player's balance
-          const newBalance = balance + potAmount;
-          setBalance(newBalance);
-          
-          // Add to history
-          const newBetRecord = {
-            timestamp: new Date().toLocaleString(),
-            mode: "Russian Roulette",
-            players: `${username} vs ${selectedOpponent?.username}`,
-            betAmount: betAmount,
-            winAmount: potAmount,
-            outcome: "won",
-            balanceAfter: newBalance
-          };
-          
-          setBetHistory(prevHistory => [...prevHistory, newBetRecord]);
-        } else {
-          // It was opponent's turn for the last chamber, player loses
-          setGameResult("lose");
-          
-          // Balance was already deducted when bet was placed
-          const newBalance = balance;
-          
-          // Add to history
-          const newBetRecord = {
-            timestamp: new Date().toLocaleString(),
-            mode: "Russian Roulette",
-            players: `${username} vs ${selectedOpponent?.username}`,
-            betAmount: betAmount,
-            outcome: "lost",
-            balanceAfter: newBalance
-          };
-          
-          setBetHistory(prevHistory => [...prevHistory, newBetRecord]);
-        }
+  
+        const outcome = currentTurn === "player" ? "win" : "lose";
+        const winAmount = outcome === "win" ? potAmount : 0;
+  
+        // Update balance and add to history
+        const newBalance = balance + (outcome === "win" ? potAmount : 0);
+        const newBetRecord = {
+          timestamp: new Date().toLocaleString(),
+          mode: "Russian Roulette",
+          players: `${username} vs ${selectedOpponent?.username}`,
+          betAmount: betAmount,
+          winAmount,
+          outcome,
+          balanceAfter: newBalance
+        };
+  
+        setBalance(newBalance);
+        setBetHistory(prevHistory => [...prevHistory, newBetRecord]);
+        setGameResult(outcome);
       }
     }
   };

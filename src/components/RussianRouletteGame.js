@@ -20,6 +20,7 @@ const sampleActiveUsers = [
 ];
 
 const RussianRouletteGame = () => {
+  const token = localStorage.getItem('token');
   const location = useLocation();
   const navigate = useNavigate();
   const { username, balance, profileImage } = location.state || { 
@@ -35,6 +36,43 @@ const RussianRouletteGame = () => {
   const [betAmount, setBetAmount] = useState(10);
   const [playerPosition, setPlayerPosition] = useState("left"); // "left" or "right"
   const [remainingAvatars, setRemainingAvatars] = useState([...avatarOptions]);
+  const GameRoom = () => {
+    const [gameRoomId, setGameRoomId] = useState(null);
+    const gameId = '2'; // Replace with the actual game ID
+  
+    useEffect(() => {
+      const createGameRoom = async () => {
+        console.log('Creating game room...');
+        const response = await fetch('http://127.0.0.1:5001/rooms/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            game_id: gameId,
+          }),
+        });
+        console.log('Response:', response);
+        if (!response.ok) {
+          console.error('Error:', response.status);
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+  
+        const data = await response.json();
+        setGameRoomId(data.roomId);
+      };
+  
+      createGameRoom();
+    }, []);
+  
+    // Use the gameRoomId value somewhere in the code
+    if (gameRoomId) {
+      console.log(`Game room ID: ${gameRoomId}`);
+    }
+  
+    return <div>Game Room</div>;
+  };
   
   // Prepare active users with random avatars from the remaining ones
   useEffect(() => {
@@ -128,6 +166,8 @@ const RussianRouletteGame = () => {
             ← Back to Games
           </button>
           <div className="text-xl font-bold">Balance: ${balance}</div>
+          <GameRoom /> 
+
         </div>
         
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
