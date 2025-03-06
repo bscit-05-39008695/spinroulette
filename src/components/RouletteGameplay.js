@@ -60,7 +60,7 @@ const RouletteGameplay = () => {
   // Save updated balance to localStorage whenever it changes
   useEffect(() => {
     if (balance !== initialBalance) {
-      localStorage.setItem('roulette_balance', balance);
+      localStorage.setItem('total_balance', balance);
     }
   }, [balance, initialBalance]);
   
@@ -253,7 +253,7 @@ const RouletteGameplay = () => {
           >
             ← Quit Game
           </button>
-          <div className="text-xl font-bold">Balance: ${balance}</div>
+          <div className="text-xl font-bold">Balance: Kes {balance}</div>
         </div>
         
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">

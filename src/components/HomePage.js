@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react"; // Added for Modal close icon
 import TransactionForm from "./TransactionForm";
 import GameHistory from "./GameHistory";
+import axios from 'axios';
+const BACKEND_URL = 'http://127.0.0.1:5001';
 
 // Integrated Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
@@ -27,8 +29,8 @@ const HomePage = () => {
   const navigate = useNavigate();
   // State management
   const [balance, setBalance] = useState(() => {
-    const savedBalance = localStorage.getItem('roulette_balance');
-    return savedBalance ? parseInt(savedBalance) : 100;
+    const savedBalance = localStorage.getItem('total_balance');
+    return savedBalance ? parseInt(savedBalance) : 0;
   });
  
   const [loading, setLoading] = useState(false);
@@ -76,44 +78,44 @@ const HomePage = () => {
   // Handler functions
   const handleDeposit = async (e) => {
     e.preventDefault();
-    if (!validatePhoneNumber(phoneNumber)) {
-      setTransactionStatus("Invalid phone number format");
-      return;
-    }
     if (amount < 10 || amount > 150000) {
       setTransactionStatus("Amount must be between KES 10 and KES 150,000");
       return;
     }
-
+  
     setLoading(true);
     setTransactionStatus("Initiating deposit...");
-
+    const token = localStorage.getItem('token');
+  
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setTransactionStatus("STK push sent to your phone. Please complete the payment.");
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      setBalance(prev => prev + Number(amount));
-      setTransactionStatus("Deposit successful!");
-      
-      setTimeout(() => {
-        setIsDepositModalOpen(false);
-        setTransactionStatus("");
-        setPhoneNumber("");
-        setAmount("");
-      }, 2000);
+      const response = await axios.post(`${BACKEND_URL}/deposit`, {
+        amount,
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      if (response.status === 200) {
+        setBalance(prev => prev + Number(amount));
+        setTransactionStatus("Deposit successful!");
+      } else {
+        setTransactionStatus("Deposit failed. Please try again.");
+      }
     } catch (error) {
       setTransactionStatus("Transaction failed. Please try again.");
     } finally {
       setLoading(false);
+      setTimeout(() => {
+        setIsDepositModalOpen(false);
+        setTransactionStatus("");
+        setAmount("");
+      }, 2000);
     }
   };
 
   const handleWithdraw = async (e) => {
     e.preventDefault();
-    if (!validatePhoneNumber(phoneNumber)) {
-      setTransactionStatus("Invalid phone number format");
-      return;
-    }
     if (amount < 10 || amount > 150000) {
       setTransactionStatus("Amount must be between KES 10 and KES 150,000");
       return;
@@ -122,28 +124,32 @@ const HomePage = () => {
       setTransactionStatus("Insufficient balance");
       return;
     }
-
+  
     setLoading(true);
     setTransactionStatus("Processing withdrawal...");
-
+    const token = localStorage.getItem('token');
+  
     try {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      setBalance(prev => prev - Number(amount));
-      setTransactionStatus("Withdrawal successful! Money sent to your M-Pesa.");
-      
-      setTimeout(() => {
-        setIsWithdrawModalOpen(false);
-        setTransactionStatus("");
-        setPhoneNumber("");
-        setAmount("");
-      }, 2000);
+      const response = await axios.post(`${BACKEND_URL}/withdraw`, {
+        amount,
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      if (response.status === 200) {
+        setBalance(prev => prev - Number(amount));
+        setTransactionStatus("Withdrawal successful! Money sent to your M-Pesa.");
+      } else {
+        setTransactionStatus("Withdrawal failed. Please try again.");
+      }
     } catch (error) {
       setTransactionStatus("Withdrawal failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
-
   const clearHistory = () => {
     setBetHistory([]);
     localStorage.removeItem('roulette_history');
@@ -172,7 +178,7 @@ const HomePage = () => {
 
   // Save balance and history to localStorage
   useEffect(() => {
-    localStorage.setItem('roulette_balance', balance);
+    localStorage.setItem('total_balance', balance);
     localStorage.setItem('roulette_history', JSON.stringify(betHistory));
   }, [balance, betHistory]);
 
@@ -183,7 +189,7 @@ const HomePage = () => {
         
         {/* Header with Balance, Profile and Transaction Buttons */}
         <div className="w-full flex justify-between items-center mb-8">
-          <div className="text-xl">Balance: ${balance}</div>
+          <div className="text-xl">Balance: Kes {balance}</div>
           
           <div className="flex items-center gap-4">
             <button 

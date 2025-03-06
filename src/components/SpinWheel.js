@@ -10,7 +10,7 @@ const SpinWheel = () => {
   
   // Initialize balance from localStorage
   const [balance, setBalance] = useState(() => {
-    const savedBalance = localStorage.getItem('roulette_balance');
+    const savedBalance = localStorage.getItem('total_balance');
     return savedBalance ? parseInt(savedBalance) : initialBalance;
   });
   
@@ -37,7 +37,7 @@ const SpinWheel = () => {
   
   // Save balance to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('roulette_balance', balance);
+    localStorage.setItem('total_balance', balance);
   }, [balance]);
   
   // Save history to localStorage whenever it changes
@@ -126,43 +126,61 @@ const SpinWheel = () => {
   };
   
   const handleSpin = () => {
-    if (!isSpinning) {
-      if (betAmount <= 0 || betAmount > balance) {
-        setError('Invalid bet amount');
-        return;
-      }
-      
-      // Clear any previous results
-      setResult(null);
-      setError(null);
-      setIsSpinning(true);
-      
-      // First decide which segment to land on
-      const targetSegmentIndex = Math.floor(Math.random() * segments.length);
-      const targetSegment = segments[targetSegmentIndex];
-      
-      // Store the selected segment in the ref for later use
-      selectedSegmentRef.current = targetSegment;
-      
-      // Calculate rotation to ensure the pointer aligns with the center of the segment
-      const extraSpins = 4 + Math.random(); // 4-5 full rotations
-      
-      // Important: For a wheel that rotates clockwise, to get segment N under the pointer,
-      // we need to rotate by N * segmentAngle degrees in the opposite direction
-      const totalRotation = (extraSpins * 360) + (targetSegmentIndex * segmentAngle);
-      
-      // Set the spin duration (animation time)
-      spinDurationRef.current = 3000 + Math.floor(Math.random() * 500); // 3-3.5 seconds
-      
-      // Start the wheel spinning
-      setRotation(totalRotation);
-      
-      // Play the spinning sound if available
-      if (spinSoundRef.current) {
-        spinSoundRef.current.play();
-      }
+  if (!isSpinning) {
+    if (betAmount <= 10 || betAmount > balance) {
+      setError('Invalid bet amount');
+      return;
     }
-  };
+    
+    // Clear any previous results
+    setResult(null);
+    setError(null);
+    setIsSpinning(true);
+    
+    // First decide which segment to land on
+    const targetSegmentIndex = Math.floor(Math.random() * segments.length);
+    const targetSegment = segments[targetSegmentIndex];
+    
+    // Store the selected segment in the ref for later use
+    selectedSegmentRef.current = targetSegment;
+    
+    // Calculate rotation to ensure the pointer aligns with the center of the segment
+    const extraSpins = 4 + Math.random(); // 4-5 full rotations
+    
+    // Important: For a wheel that rotates clockwise, to get segment N under the pointer,
+    // we need to rotate by N * segmentAngle degrees in the opposite direction
+    const totalRotation = (extraSpins * 360) + (targetSegmentIndex * segmentAngle);
+    
+    // Set the spin duration (animation time)
+    spinDurationRef.current = 3000 + Math.floor(Math.random() * 500); // 3-3.5 seconds
+    
+    // Start the wheel spinning
+    setRotation(totalRotation);
+    
+    // Play the spinning sound if available
+    if (spinSoundRef.current) {
+      spinSoundRef.current.play();
+    }
+    console.log(betAmount);
+    
+    
+    // Make API call to send bet amount
+    const token = localStorage.getItem('token'); // Assuming JWT token is stored in local storage
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+    
+    fetch('http://127.0.0.1:5001/games/spin-and-win/play', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ bet_amount: betAmount })
+    })
+    .then(response => response.json())
+    .then(data => console.log(data))
+    .catch(error => console.error('Error placing bet:', error));
+  }
+};
   
   // Handler to go back to the main page
   const handleBackToMainPage = () => {
@@ -185,7 +203,7 @@ const SpinWheel = () => {
       </div>
 
       <div className="text-lg font-semibold mb-4 text-center">
-        Balance: ${balance}
+        Balance: Kes {balance}
       </div>
       
       <div className="flex flex-col items-center gap-6">

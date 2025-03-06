@@ -1,30 +1,27 @@
 import React, { useState, createContext, useContext } from "react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { useNavigate, Navigate } from "react-router-dom";
+import axios from "axios";
 
 const CLIENT_ID = "256951004983-1ch28n1u9rjog2mj25i2sc4nnh4nu0rm.apps.googleusercontent.com";
+// Get the backend URL from environment variables
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:5001";
 
-// Create an auth context
 export const AuthContext = createContext(null);
 
-// Auth provider component
 export const AuthProvider = ({ children }) => {
-  // Check if user is authenticated
   const isAuthenticated = () => {
-    return localStorage.getItem('isAuthenticated') === 'true';
+    return localStorage.getItem("token") !== null;
   };
 
-  // Login function
-  const login = () => {
-    localStorage.setItem('isAuthenticated', 'true');
+  const login = (token) => {
+    localStorage.setItem("token", token);
   };
 
-  // Logout function
   const logout = () => {
-    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem("token");
   };
 
-  // Protected route component that redirects to login if not authenticated
   const ProtectedRoute = ({ children }) => {
     if (!isAuthenticated()) {
       return <Navigate to="/login" replace />;
@@ -39,17 +36,13 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// Custom hook to use auth context
 export const useAuth = () => {
   return useContext(AuthContext);
 };
 
 const RegisterLogin = () => {
   const [isRegistering, setIsRegistering] = useState(false);
-
-  const toggleForm = () => {
-    setIsRegistering(!isRegistering);
-  };
+  const toggleForm = () => setIsRegistering(!isRegistering);
 
   return (
     <GoogleOAuthProvider clientId={CLIENT_ID}>
@@ -60,143 +53,131 @@ const RegisterLogin = () => {
   );
 };
 
+
 const LoginForm = ({ toggleForm }) => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  
-  const handleLoginSubmit = (e) => {
+  const [error, setError] = useState("");
+
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    // In a real app, you would validate credentials here
+    const formData = new FormData(e.target);
+    const email = formData.get("email");
+    const password = formData.get("password");
     
-    // Set authentication status
-    login();
-    
-    // Redirect to game hub
-    navigate('/game-hub');
+    // Validation
+    if (!email || !password) {
+      setError("Email and password are required");
+      return;
+    }
+
+    console.log("Login attempt with:", { email, password: "***" });
+
+    try {
+      const response = await axios.post(`${BACKEND_URL}/login`, {
+        email: email,
+        password: password,
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log("Login response:", response.status);
+      
+      let username = response.data.username;
+      localStorage.setItem("username", username);
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem('total_balance', response.data.balance);
+      if (response.data && response.data.token) {
+        login(response.data.token);
+        navigate("/game-hub");
+      } else {
+        setError("Invalid response from server");
+      }
+    } catch (error) {
+      console.error("Login failed", error);
+      if (error.response) {
+        console.log("Error status:", error.response.status);
+        console.log("Error data:", error.response.data);
+        setError(error.response.data.message || "Login failed. Check your credentials.");
+      } else if (error.request) {
+        setError("No response from server. Check your connection.");
+      } else {
+        setError("Login error. Please try again.");
+      }
+    }
   };
 
-  const handleSuccess = (response) => {
-    console.log("Google Login Success:", response);
-    
-    // Set authentication status
-    login();
-    
-    // Redirect to game hub
-    navigate('/game-hub');
-  };
-
-  const handleError = () => {
-    console.log("Google Login Failed");
-  };
-
+  // Rest of your component remains the same
   return (
     <div className="w-full max-w-md p-10 bg-white rounded-xl shadow-xl text-center h-4/5 flex flex-col justify-center">
       <h2 className="text-2xl font-bold mb-6">Login to GameHub</h2>
+      {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">{error}</div>}
       <form className="flex flex-col gap-4 mb-6" onSubmit={handleLoginSubmit}>
-        <input 
-          type="text" 
-          placeholder="Email" 
-          required 
-          className="w-full p-3.5 text-base border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        />
-        <input 
-          type="password" 
-          placeholder="Password" 
-          required 
-          className="w-full p-3.5 text-base border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        />
-        <button 
-          type="submit" 
-          className="w-full p-4 text-xl font-bold text-white bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-        >
-          Login
-        </button>
+        <input type="email" name="email" placeholder="Email" required className="w-full p-3.5 text-base border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+        <input type="password" name="password" placeholder="Password" required className="w-full p-3.5 text-base border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+        <button type="submit" className="w-full p-4 text-xl font-bold text-white bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">Login</button>
       </form>
-      <div className="mb-6">
-        <GoogleLogin onSuccess={handleSuccess} onError={handleError} />
-      </div>
+     
       <p className="text-gray-700">
-        Don't have an account?{" "}
-        <span onClick={toggleForm} className="text-blue-600 font-bold cursor-pointer hover:underline">
-          Register
-        </span>
+        Don't have an account? <span onClick={toggleForm} className="text-blue-600 font-bold cursor-pointer hover:underline">Register</span>
       </p>
     </div>
   );
 };
-
 const RegisterForm = ({ toggleForm }) => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  
-  const handleRegisterSubmit = (e) => {
+  const [error, setError] = useState("");
+
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-    // In a real app, you would create the account here
+    const formData = new FormData(e.target);
     
-    // Set authentication status
-    login();
+    // Debug logging to verify data
+    const email = formData.get("email");
+    const password = formData.get("password");
+    const username = formData.get("username");
     
-    // Redirect to game hub
-    navigate('/game-hub');
-  };
+    console.log("Form data:", { email, password, username });
+    
+    // Validation check
+    if (!password || password.trim() === "") {
+      setError("Password cannot be empty");
+      return;
+    }
 
-  const handleSuccess = (response) => {
-    console.log("Google Signup Success:", response);
-    
-    // Set authentication status
-    login();
-    
-    // Redirect to game hub
-    navigate('/game-hub');
-  };
-
-  const handleError = () => {
-    console.log("Google Signup Failed");
+    try {
+      const response = await axios.post(`${BACKEND_URL}/register`, {
+        username: username,
+        email: email,
+        password: password,
+      });
+      login(response.data.token);
+      navigate("/game-hub");
+    } catch (error) {
+      console.error("Registration failed", error);
+      if (error.response) {
+        setError(error.response.data.message || "Registration failed");
+      } else {
+        setError("Connection error. Please try again.");
+      }
+    }
   };
 
   return (
     <div className="w-full max-w-md p-10 bg-white rounded-xl shadow-xl text-center h-4/5 flex flex-col justify-center">
-      <h2 className="text-2xl font-bold mb-6">Create New Account</h2>
+      <h2 className="text-2xl font-bold mb-6">Create GameHub Account</h2>
+      {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">{error}</div>}
       <form className="flex flex-col gap-4 mb-6" onSubmit={handleRegisterSubmit}>
-        <input 
-          type="text" 
-          placeholder="Username" 
-          required 
-          className="w-full p-3.5 text-base border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        />
-        <input 
-          type="email" 
-          placeholder="Email" 
-          required 
-          className="w-full p-3.5 text-base border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        />
-        <input 
-          type="password" 
-          placeholder="Password" 
-          required 
-          className="w-full p-3.5 text-base border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        />
-        <input 
-          type="password" 
-          placeholder="Confirm Password" 
-          required 
-          className="w-full p-3.5 text-base border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        />
-        <button 
-          type="submit" 
-          className="w-full p-4 text-xl font-bold text-white bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-        >
-          Register
-        </button>
+        <input type="text" name="username" placeholder="Username" required className="w-full p-3.5 text-base border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+        <input type="email" name="email" placeholder="Email" required className="w-full p-3.5 text-base border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+        <input type="password" name="password" placeholder="Password" required className="w-full p-3.5 text-base border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+        <button type="submit" className="w-full p-4 text-xl font-bold text-white bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">Register</button>
       </form>
-      <div className="mb-6">
-        <GoogleLogin onSuccess={handleSuccess} onError={handleError} />
-      </div>
       <p className="text-gray-700">
-        Already have an account?{" "}
-        <span onClick={toggleForm} className="text-blue-600 font-bold cursor-pointer hover:underline">
-          Login
-        </span>
+        Already have an account? <span onClick={toggleForm} className="text-blue-600 font-bold cursor-pointer hover:underline">Login</span>
       </p>
     </div>
   );
