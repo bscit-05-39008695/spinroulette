@@ -7,28 +7,48 @@ export const GameHistory = () => {
 
   useEffect(() => {
     const fetchGameHistory = async () => {
+      setLoading(true);
+      setError(null);
+      
       try {
         const token = localStorage.getItem('token');
+        if (!token) {
+          setError('Authentication token not found');
+          setLoading(false);
+          return;
+        }
+        
         const headers = {
           'Authorization': `Bearer ${token}`,
         };
+        
         const response = await fetch('https://gamehub-3suy.onrender.com/history', { headers });
+        
+        if (!response.ok) {
+          throw new Error(`Server responded with status: ${response.status}`);
+        }
+        
         const data = await response.json();
-
+        
         if (Array.isArray(data.gameHistory)) {
           setBetHistory(data.gameHistory);
+        } else if (Array.isArray(data)) {
+          // In case API returns array directly without wrapping in gameHistory object
+          setBetHistory(data);
         } else {
-          setError('Invalid game history data');
+          console.error('Unexpected API response format:', data);
+          setError('Invalid game history data format. Check console for details.');
         }
-        setLoading(false);
       } catch (error) {
-        setError(error.message);
+        console.error('Error fetching game history:', error);
+        setError(`Failed to load game history: ${error.message}`);
+      } finally {
         setLoading(false);
       }
     };
+    
     fetchGameHistory();
   }, []);
-
   const renderGameSpecificInfo = (bet) => {
     // Return the game-specific information that you want to render
     return (
