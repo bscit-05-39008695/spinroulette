@@ -29,15 +29,16 @@ export const GameHistory = () => {
         }
         
         const data = await response.json();
+        console.log('API response:', data); // Debug the exact response structure
         
         if (Array.isArray(data.gameHistory)) {
           setBetHistory(data.gameHistory);
         } else if (Array.isArray(data)) {
-          // In case API returns array directly without wrapping in gameHistory object
+          // In case API returns array directly
           setBetHistory(data);
         } else {
           console.error('Unexpected API response format:', data);
-          setError('Invalid game history data format. Check console for details.');
+          setError('Invalid game history data format');
         }
       } catch (error) {
         console.error('Error fetching game history:', error);
