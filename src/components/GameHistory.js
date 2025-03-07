@@ -12,7 +12,7 @@ export const GameHistory = () => {
         const headers = {
           'Authorization': `Bearer ${token}`,
         };
-        const response = await fetch('http://127.0.0.1:5001/history', { headers });
+        const response = await fetch('https://gamehub-3suy.onrender.com', { headers });
         const data = await response.json();
 
         if (Array.isArray(data.gameHistory)) {

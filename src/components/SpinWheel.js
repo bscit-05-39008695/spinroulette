@@ -171,7 +171,7 @@ const SpinWheel = () => {
       'Content-Type': 'application/json'
     };
     
-    fetch('http://127.0.0.1:5001/games/spin-and-win/play', {
+    fetch('https://gamehub-3suy.onrender.com/games/spin-and-win/play', {
       method: 'POST',
       headers,
       body: JSON.stringify({ bet_amount: betAmount })

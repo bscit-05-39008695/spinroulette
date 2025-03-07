@@ -4,7 +4,7 @@ import { X } from "lucide-react"; // Added for Modal close icon
 import TransactionForm from "./TransactionForm";
 import GameHistory from "./GameHistory";
 import axios from 'axios';
-const BACKEND_URL = 'http://127.0.0.1:5001';
+const BACKEND_URL = 'https://gamehub-3suy.onrender.com';
 
 // Integrated Modal Component
 const Modal = ({ isOpen, onClose, children }) => {

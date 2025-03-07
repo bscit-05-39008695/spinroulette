@@ -5,7 +5,7 @@ import axios from "axios";
 
 const CLIENT_ID = "256951004983-1ch28n1u9rjog2mj25i2sc4nnh4nu0rm.apps.googleusercontent.com";
 // Get the backend URL from environment variables
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:5001";
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "https://gamehub-3suy.onrender.com";
 
 export const AuthContext = createContext(null);
 

@@ -43,7 +43,7 @@ const RussianRouletteGame = () => {
     useEffect(() => {
       const createGameRoom = async () => {
         console.log('Creating game room...');
-        const response = await fetch('http://127.0.0.1:5001/rooms/create', {
+        const response = await fetch('https://gamehub-3suy.onrender.com/rooms/create', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
